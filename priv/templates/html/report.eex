@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Umbrella Coverage</title>
+        <script src="https://d3js.org/d3.v7.min.js"></script>
+        <style>
+            /* Style for the diagram */
+            body {
+                font-family: sans-serif;
+                margin: 20px;
+            }
+            #chart {
+                margin-top: 20px;
+            }
+            .node {
+                cursor: pointer;
+            }
+            .node rect {
+                fill-opacity: 0.8;
+                shape-rendering: crispEdges;
+            }
+            .node text {
+                pointer-events: none;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Umbrella Coverage</h1>
+
+        <div id="chart"></div>
+
+        <script>
+            const coverageData = <%= coverage_data %>;
+            renderIcicleDiagram(coverageData);
+
+            // Function to build the hierarchy from the data
+            function buildHierarchy(data, name = "Umbrella") {
+                // Changed 'root' to 'Umbrella'
+                let node = {};
+                node.name = name;
+                node.children = [];
+
+                // Compute the value and coverage percentage
+                const linesCovered = data.cov || 0;
+                const linesNotCovered = data.not_cov || 0;
+                const totalLines = linesCovered + linesNotCovered;
+
+                node.value = totalLines;
+                node.linesCovered = linesCovered;
+                node.linesNotCovered = linesNotCovered;
+                node.coveragePercentage =
+                    totalLines > 0 ? linesCovered / totalLines : 0;
+
+                // If data has 'children', process them
+                if (data.children) {
+                    for (let key in data.children) {
+                        if (data.children.hasOwnProperty(key)) {
+                            let childData = data.children[key];
+                            node.children.push(buildHierarchy(childData, key));
+                        }
+                    }
+                }
+
+                // If node has no children, remove the 'children' property
+                if (node.children.length === 0) {
+                    delete node.children;
+                }
+
+                return node;
+            }
+
+            // Function to render the icicle diagram
+            function renderIcicleDiagram(data) {
+                // Build the hierarchy
+                const rootData = buildHierarchy(data);
+
+                // Set the dimensions of the diagram
+                const width = 960;
+                const height = 600;
+
+                // Remove any existing SVG
+                d3.select("#chart").select("svg").remove();
+
+                // Create the color scale (Red to Green)
+                const color = d3
+                    .scaleSequential(d3.interpolateRdYlGn)
+                    .domain([0, 1]); // Coverage percentage from 0 to 1
+
+                // Compute the partition layout
+                const root = d3
+                    .hierarchy(rootData)
+                    .sum((d) => d.value)
+                    .sort((a, b) => b.height - a.height || b.value - a.value);
+
+                d3.partition().size([height, width])(root);
+
+                // Create the SVG container
+                const svg = d3
+                    .select("#chart")
+                    .append("svg")
+                    .attr("viewBox", [0, 0, width, height])
+                    .style("font", "10px sans-serif");
+
+                // Append cells
+                const cell = svg
+                    .selectAll("g")
+                    .data(root.descendants())
+                    .join("g")
+                    .attr("transform", (d) => `translate(${d.y0},${d.x0})`)
+                    .attr("class", "node");
+
+                const rect = cell
+                    .append("rect")
+                    .attr("width", (d) => d.y1 - d.y0 - 1)
+                    .attr("height", (d) => rectHeight(d))
+                    .attr("fill-opacity", 0.8)
+                    .attr("fill", (d) => {
+                        // Remove the condition that skips coloring the root node
+                        return color(d.data.coveragePercentage);
+                    })
+                    .style("cursor", "pointer")
+                    .on("click", clicked);
+
+                const text = cell
+                    .append("text")
+                    .style("user-select", "none")
+                    .attr("pointer-events", "none")
+                    .attr("x", 4)
+                    .attr("y", 13)
+                    .attr("fill-opacity", (d) => +labelVisible(d));
+
+                text.append("tspan").text((d) => d.data.name);
+
+                const format = d3.format(",d");
+                const percentFormat = d3.format(".0%");
+
+                const tspan = text
+                    .append("tspan")
+                    .attr("fill-opacity", (d) => labelVisible(d) * 0.7)
+                    .text(
+                        (d) => ` ${percentFormat(d.data.coveragePercentage)}`,
+                    );
+
+                cell.append("title").text((d) => {
+                    const ancestors = d
+                        .ancestors()
+                        .map((d) => d.data.name)
+                        .reverse()
+                        .join("/");
+                    const coverageInfo =
+                        `Lines Covered: ${d.data.linesCovered}\n` +
+                        `Lines Not Covered: ${d.data.linesNotCovered}\n` +
+                        `Coverage: ${percentFormat(d.data.coveragePercentage)}`;
+                    return `${ancestors}\n${coverageInfo}`;
+                });
+
+                // On click, change the focus and transitions it into view.
+                let focus = root;
+
+                function clicked(event, p) {
+                    focus = focus === p ? p.parent : p;
+
+                    root.each(
+                        (d) =>
+                            (d.target = {
+                                x0:
+                                    ((d.x0 - focus.x0) /
+                                        (focus.x1 - focus.x0)) *
+                                    height,
+                                x1:
+                                    ((d.x1 - focus.x0) /
+                                        (focus.x1 - focus.x0)) *
+                                    height,
+                                y0: d.y0 - focus.y0,
+                                y1: d.y1 - focus.y0,
+                            }),
+                    );
+
+                    const t = cell
+                        .transition()
+                        .duration(750)
+                        .attr(
+                            "transform",
+                            (d) => `translate(${d.target.y0},${d.target.x0})`,
+                        );
+
+                    rect.transition(t).attr("height", (d) =>
+                        rectHeight(d.target),
+                    );
+                    text.transition(t).attr(
+                        "fill-opacity",
+                        (d) => +labelVisible(d.target),
+                    );
+                    tspan
+                        .transition(t)
+                        .attr(
+                            "fill-opacity",
+                            (d) => labelVisible(d.target) * 0.7,
+                        );
+                }
+
+                function rectHeight(d) {
+                    return d.x1 - d.x0 - 1;
+                }
+
+                function labelVisible(d) {
+                    return d.y1 <= width && d.y0 >= 0 && d.x1 - d.x0 > 16;
+                }
+            }
+        </script>
+    </body>
+</html>

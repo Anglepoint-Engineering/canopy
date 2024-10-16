@@ -1,0 +1,8 @@
+<%= for record <- records do %>
+TN:<%= record.test %>
+SF:<%= record.file_path %><%= for {line, executed} <- record.coverage do %>
+DA:<%= line %>,<%= executed %><% end %>
+LF:<%= record.total_lines %>
+LH:<%= record.lines_covered %>
+end_of_record
+<% end %>
