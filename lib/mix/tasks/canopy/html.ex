@@ -1,8 +1,8 @@
-defmodule Mix.Tasks.Brolly.Html do
+defmodule Mix.Tasks.Canopy.Html do
   use Mix.Task
 
   require EEx
-  alias Brolly.Storage
+  alias Canopy.Storage
 
   def run(_) do
     Storage.template_path(["html", "report.eex"])

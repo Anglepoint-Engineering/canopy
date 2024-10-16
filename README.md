@@ -1,4 +1,6 @@
-# Brolly
+# Canopy
+
+## Elixir umbrella test coverage tool, with cross app stats.
 
 ## Why?
 
@@ -10,12 +12,12 @@ It allows for higher-level coverage of modules that orchestrate side effects bet
 
 ## How?
 
-Brolly captures coverage statistics of inter-app communication within an umbrella app.
+canopy captures coverage statistics of inter-app communication within an umbrella app.
 This enables comprehensive integration tests that reduce unnecessary mocking,
 which is often tightly coupled to specific library implementations.
 
 ## What?
 
-Brolly compiles and executes all umbrella app code in the same :cover context using brolly.cover.
-Results can be exported with a simple preview using brolly.inspect,
-to a browser with brolly.html, or to an IDE with brolly.lcov.
+canopy compiles and executes all umbrella app code in the same :cover context using canopy.cover.
+Results can be exported with a simple preview using canopy.inspect,
+to a browser with canopy.html, or to an IDE with canopy.lcov.

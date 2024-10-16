@@ -1,4 +1,4 @@
-defmodule Brolly.Coverage.Line do
+defmodule Canopy.Coverage.Line do
   defstruct file_path: nil, is_covered: [], not_covered: []
 
   def lines_from_coverage(coverage_data) do

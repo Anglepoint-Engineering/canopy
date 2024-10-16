@@ -1,11 +1,11 @@
-defmodule Mix.Tasks.Brolly.Cover do
+defmodule Mix.Tasks.Canopy.Cover do
   use Mix.Task
 
   @shortdoc "Test cross coverage of all umbrella apps together."
 
-  alias Brolly.Storage
-  alias Brolly.Coverage.Line
-  alias Brolly.Coverage.Node
+  alias Canopy.Storage
+  alias Canopy.Coverage.Line
+  alias Canopy.Coverage.Node
 
   def run(_) do
     :cover.start()

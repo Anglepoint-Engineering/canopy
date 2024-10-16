@@ -1,10 +1,10 @@
-defmodule Mix.Tasks.Brolly.Inspect do
+defmodule Mix.Tasks.Canopy.Inspect do
   use Mix.Task
 
-  @shortdoc "Inspect Brolly test coverage results."
+  @shortdoc "Inspect canopy test coverage results."
 
-  alias Brolly.Storage
-  alias Brolly.Coverage.Node
+  alias Canopy.Storage
+  alias Canopy.Coverage.Node
 
   def run(_) do
     Storage.load!("node_coverage") |> render_layer()

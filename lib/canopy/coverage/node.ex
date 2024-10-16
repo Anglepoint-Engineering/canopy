@@ -1,7 +1,7 @@
-defmodule Brolly.Coverage.Node do
+defmodule Canopy.Coverage.Node do
   defstruct cov: 0, not_cov: 0, children: %{}
 
-  alias Brolly.Coverage.Line
+  alias Canopy.Coverage.Line
 
   def node_tree_from_lines(lines) do
     lines

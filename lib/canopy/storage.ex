@@ -1,5 +1,5 @@
-defmodule Brolly.Storage do
-  @work_dir "./brolly"
+defmodule Canopy.Storage do
+  @work_dir "./canopy"
   @spec persist!(term(), binary()) :: term()
   def persist!(data, file) do
     File.mkdir_p!(@work_dir)
@@ -20,7 +20,7 @@ defmodule Brolly.Storage do
   @spec template_path([binary()]) :: binary()
   def template_path(path) do
     Mix.Project.deps_paths()
-    |> Map.get(:brolly)
+    |> Map.get(:canopy)
     |> Path.join((["priv", "templates"] ++ path) |> Path.join())
   end
 

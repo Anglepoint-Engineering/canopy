@@ -1,7 +1,7 @@
-defmodule Mix.Tasks.Brolly.Lcov do
+defmodule Mix.Tasks.Canopy.Lcov do
   use Mix.Task
 
-  alias Brolly.Storage
+  alias Canopy.Storage
 
   def run(_) do
     records =
