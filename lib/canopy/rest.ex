@@ -1,10 +1,14 @@
 defmodule Canopy.Rest do
+  require Logger
+
   @default_headers [
     {~c"User-Agent", ~c"Elixir"}
   ]
 
   def get_json(url, headers) do
     Application.ensure_all_started([:inets, :ssl])
+
+    Logger.debug("sending GET to: #{url}")
 
     :httpc.request(:get, {String.to_charlist(url), headers ++ @default_headers}, [], [])
     |> handle_json_result()
@@ -13,6 +17,8 @@ defmodule Canopy.Rest do
   @application_json ~c"Application/Json"
   def post_json(url, headers, body) do
     Application.ensure_all_started([:inets, :ssl])
+
+    Logger.debug("sending POST to: #{url}")
 
     :httpc.request(
       :post,
@@ -31,7 +37,9 @@ defmodule Canopy.Rest do
         {:ok, json}
 
       {:ok, {{_, status_code, _}, _, body}} ->
-        {:error, "GitHub API returned status #{status_code}: #{body}"}
+        message = "GitHub API returned status #{status_code}: #{body}."
+        Logger.warning(message)
+        {:error, message}
 
       {:error, reason} ->
         {:error, reason}
