@@ -6,9 +6,6 @@ defmodule Mix.Tasks.Canopy.Github do
   alias Canopy.Coverage.Line
 
   def run(_) do
-    if System.get_env("GITHUB_EVENT_NAME") != "pull_request",
-      do: raise("Not a pull request event.")
-
     github_token!() |> process_pull_request!()
   end
 
