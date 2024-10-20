@@ -20,6 +20,7 @@ defmodule Mix.Tasks.Canopy.Cover do
 
     coverage_data
     |> Line.lines_from_coverage()
+    |> dbg()
     |> Storage.persist!("line_coverage")
     |> Node.node_tree_from_lines()
     |> Storage.persist!("node_coverage")
