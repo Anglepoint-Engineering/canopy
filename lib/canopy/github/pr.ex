@@ -55,16 +55,16 @@ defmodule Canopy.Github.Pr do
     end
   end
 
-  def annotate_pr(token, owner, repo, sha, uncovered_files) do
+  def annotate_pr(token, owner, repo, sha, missing_coverage) do
     url = "https://api.github.com/repos/#{owner}/#{repo}/check-runs"
 
-    case Rest.post_json(url, github_headers(token), annotations_request(sha, uncovered_files)) do
+    case Rest.post_json(url, github_headers(token), annotations_request(sha, missing_coverage)) do
       {:ok, _response} -> :ok
       {:error, reason} -> {:error, reason}
     end
   end
 
-  defp annotations_request(sha, uncovered_files) do
+  defp annotations_request(sha, missing_coverage) do
     %{
       "name" => "Canopy Coverage",
       "head_sha" => sha,
@@ -73,12 +73,12 @@ defmodule Canopy.Github.Pr do
       "output" => %{
         "title" => "Coverage Results",
         "summary" =>
-          if Enum.empty?(uncovered_files) do
+          if Enum.empty?(missing_coverage) do
             "Code changes have complete coverage."
           else
             "Coce changes are missing some coverage."
           end,
-        "annotations" => uncovered_files |> Enum.flat_map(&annotation_request/1)
+        "annotations" => missing_coverage |> Enum.flat_map(&annotation_request/1)
       }
     }
   end

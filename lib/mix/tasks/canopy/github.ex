@@ -19,15 +19,15 @@ defmodule Mix.Tasks.Canopy.Github do
     {owner, repo} = extract_owner_repo!()
 
     with {:ok, files_changed} <- Pr.get_files_changed(token, owner, repo, event_data["number"]),
-         uncovered_files <-
-           cross_reference_uncovered_files!(files_changed, Storage.load!("line_coverage")),
+         missing_coverage <-
+           code_changes_missing_coverage!(files_changed, Storage.load!("line_coverage")),
          :ok <-
            Pr.annotate_pr(
              token,
              owner,
              repo,
              get_in(event_data, ["pull_request", "head", "sha"]),
-             uncovered_files
+             missing_coverage
            ) do
       :ok
     else
@@ -42,18 +42,25 @@ defmodule Mix.Tasks.Canopy.Github do
     end
   end
 
-  defp cross_reference_uncovered_files!(files_changed, line_coverage) do
+  defp code_changes_missing_coverage!(files_changed, line_coverage) do
+    Logger.debug("""
+    cross referencing code changes to: #{length(files_changed)} file(s),
+    with line coverage on: #{map_size(line_coverage)} module(s)
+    """)
+
     lines_by_file_name =
       line_coverage
       |> Enum.reduce(%{}, fn {_module, %Line{file_path: file_path} = line}, coverage ->
-        Map.update(coverage, file_path, [], &(&1 ++ [line]))
+        Map.put(coverage, file_path, line)
       end)
 
     files_changed
     |> Enum.map(fn {file_name, lines_changed} ->
+      Logger.debug("checking for crossover on: #{file_name}")
+
       case lines_by_file_name[file_name] do
         %Line{file_path: file_path, not_covered: not_covered} ->
-          Logger.debug("inspecting code change crossover with coverage: #{file_path}")
+          Logger.debug("inspecting missing coverage intersection on: #{file_path}")
           {file_path, lines_changed |> intersection(not_covered)}
 
         nil ->
