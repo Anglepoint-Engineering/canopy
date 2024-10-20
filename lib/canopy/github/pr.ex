@@ -83,7 +83,7 @@ defmodule Canopy.Github.Pr do
     }
   end
 
-  defp annotation_request(%{file_path: file_path, uncovered_lines: uncovered_lines}) do
+  defp annotation_request({file_path, uncovered_lines}) do
     uncovered_lines
     |> Enum.map(
       &%{

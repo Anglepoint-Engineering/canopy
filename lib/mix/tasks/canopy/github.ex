@@ -53,7 +53,6 @@ defmodule Mix.Tasks.Canopy.Github do
       |> Enum.reduce(%{}, fn {_module, %Line{file_path: file_path} = line}, coverage ->
         Map.put(coverage, file_path, line)
       end)
-      |> dbg()
 
     files_changed
     |> Enum.map(fn {file_name, lines_changed} ->
@@ -62,7 +61,11 @@ defmodule Mix.Tasks.Canopy.Github do
       case lines_by_file_name[file_name] do
         %Line{file_path: file_path, not_covered: not_covered} ->
           Logger.debug("intersecting missing coverage on: #{file_path}")
-          {file_path, lines_changed |> intersection(not_covered)}
+
+          case lines_changed |> intersection(not_covered) do
+            [] -> nil
+            uncovered_lines -> {file_path, uncovered_lines}
+          end
 
         nil ->
           nil
