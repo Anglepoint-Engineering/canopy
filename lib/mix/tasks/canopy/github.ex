@@ -1,6 +1,7 @@
 defmodule Mix.Tasks.Canopy.Github do
   use Mix.Task
 
+  require Logger
   alias Canopy.Github.Pr
   alias Canopy.Storage
   alias Canopy.Coverage.Line
@@ -45,17 +46,21 @@ defmodule Mix.Tasks.Canopy.Github do
     lines_by_file_name =
       line_coverage
       |> Enum.reduce(%{}, fn {_module, %Line{file_path: file_path} = line}, coverage ->
-        Map.update(coverage, Path.basename(file_path), [], &(&1 ++ [line]))
+        Map.update(coverage, file_path, [], &(&1 ++ [line]))
       end)
 
     files_changed
-    |> Enum.flat_map(fn {file_name, lines_changed} ->
-      lines_by_file_name
-      |> Map.get(file_name, [])
-      |> Enum.map(fn %Line{file_path: file_path, not_covered: not_covered} ->
-        {file_path, lines_changed |> intersection(not_covered)}
-      end)
+    |> Enum.map(fn {file_name, lines_changed} ->
+      case lines_by_file_name[file_name] do
+        %Line{file_path: file_path, not_covered: not_covered} ->
+          Logger.debug("inspecting code change crossover with coverage: #{file_path}")
+          {file_path, lines_changed |> intersection(not_covered)}
+
+        nil ->
+          nil
+      end
     end)
+    |> Enum.reject(&is_nil/1)
   end
 
   defp intersection(a, b), do: Enum.filter(a, &Enum.member?(b, &1))
