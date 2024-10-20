@@ -43,16 +43,17 @@ defmodule Mix.Tasks.Canopy.Github do
   end
 
   defp code_changes_missing_coverage!(files_changed, line_coverage) do
-    Logger.debug("""
-    cross referencing code changes to: #{length(files_changed)} file(s),
-    with line coverage on: #{map_size(line_coverage)} module(s)
-    """)
+    Logger.debug(
+      "cross referencing code changes on: #{length(files_changed)} file(s), " <>
+        "with line coverage on: #{length(line_coverage)} module(s)"
+    )
 
     lines_by_file_name =
       line_coverage
       |> Enum.reduce(%{}, fn {_module, %Line{file_path: file_path} = line}, coverage ->
         Map.put(coverage, file_path, line)
       end)
+      |> dbg()
 
     files_changed
     |> Enum.map(fn {file_name, lines_changed} ->
@@ -60,7 +61,7 @@ defmodule Mix.Tasks.Canopy.Github do
 
       case lines_by_file_name[file_name] do
         %Line{file_path: file_path, not_covered: not_covered} ->
-          Logger.debug("inspecting missing coverage intersection on: #{file_path}")
+          Logger.debug("intersecting missing coverage on: #{file_path}")
           {file_path, lines_changed |> intersection(not_covered)}
 
         nil ->
