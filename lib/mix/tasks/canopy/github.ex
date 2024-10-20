@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Canopy.Github do
 
     with {:ok, files_changed} <- Pr.get_files_changed(token, owner, repo, event_data["number"]),
          uncovered_files <-
-           cross_reference_uncovered_files(files_changed, Storage.load!("line_coverage")),
+           cross_reference_uncovered_files!(files_changed, Storage.load!("line_coverage")),
          :ok <-
            Pr.annotate_pr(
              token,
@@ -41,7 +41,13 @@ defmodule Mix.Tasks.Canopy.Github do
     end
   end
 
-  defp cross_reference_uncovered_files(files_changed, line_coverage) do
+  defp cross_reference_uncovered_files!(nil, _line_coverage),
+    do: raise(ArgumentError, message: "missing files changed")
+
+  defp cross_reference_uncovered_files!(_files_changed, nil),
+    do: raise(ArgumentError, message: "missing line coverage")
+
+  defp cross_reference_uncovered_files!(files_changed, line_coverage) do
     lines_by_file_name =
       line_coverage
       |> Enum.reduce(%{}, fn {_module, %Line{file_path: file_path} = line}, coverage ->
