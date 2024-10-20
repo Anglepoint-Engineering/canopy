@@ -27,7 +27,8 @@ defmodule Canopy.Coverage.Node do
         is_covered: is_covered,
         not_covered: not_covered
       }) do
-    paths = file_path |> String.split("/")
+    # skip the apps dir
+    [_apps | paths] = file_path |> String.split("/")
 
     node |> tree_coverage(paths, {length(is_covered), length(not_covered)})
   end

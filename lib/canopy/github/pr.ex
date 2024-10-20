@@ -121,10 +121,14 @@ defmodule Canopy.Github.Pr do
     details =
       apps
       |> Enum.map(fn {app, %Node{cov: cov, not_cov: not_cov}} ->
-        "#{app} - lines covered: #{cov}, not covered: #{not_cov}"
+        "- **#{app}** > lines covered: #{cov}, not covered: #{not_cov}"
       end)
       |> Enum.join("\n")
 
-    "Umbrella Coverage:\n#{details}"
+    """
+    ### Umbrella Coverage
+
+    #{details}
+    """
   end
 end
