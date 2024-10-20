@@ -45,7 +45,7 @@ defmodule Mix.Tasks.Canopy.Github do
   defp code_changes_missing_coverage!(files_changed, line_coverage) do
     Logger.debug(
       "cross referencing code changes on: #{length(files_changed)} file(s), " <>
-        "with line coverage on: #{length(line_coverage)} module(s)"
+        "with line coverage on: #{map_size(line_coverage)} module(s)"
     )
 
     lines_by_file_name =
