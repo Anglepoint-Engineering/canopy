@@ -6,15 +6,36 @@ defmodule Mix.Tasks.Canopy.Github do
   alias Canopy.Storage
   alias Canopy.Coverage.Line
 
-  def run(_) do
-    github_token!() |> process_pull_request!()
+  @modes [:info, :warn, :fail]
+  @default_mode :warn
+  def run(args) do
+    {opts, _remaining_args, _invalid} =
+      OptionParser.parse(args,
+        switches: [mode: :string],
+        aliases: [m: :mode]
+      )
+
+    opts =
+      case opts[:mode] do
+        nil ->
+          Keyword.put(opts, :mode, @default_mode)
+
+        mode ->
+          if Enum.member?(@modes, String.to_atom(mode)) do
+            opts
+          else
+            raise ArgumentError, message: "unsupported mode: #{mode}"
+          end
+      end
+
+    github_token!() |> process_pull_request!(opts)
   end
 
   defp github_token! do
     System.get_env("GITHUB_TOKEN") || raise "No GitHub token found."
   end
 
-  defp process_pull_request!(token) do
+  defp process_pull_request!(token, mode: mode) do
     event_data = System.get_env("GITHUB_EVENT_PATH") |> File.read!() |> :json.decode()
     {owner, repo} = extract_owner_repo!()
 
@@ -27,7 +48,8 @@ defmodule Mix.Tasks.Canopy.Github do
              owner,
              repo,
              get_in(event_data, ["pull_request", "head", "sha"]),
-             missing_coverage
+             missing_coverage,
+             mode
            ) do
       :ok
     else
@@ -56,8 +78,6 @@ defmodule Mix.Tasks.Canopy.Github do
 
     files_changed
     |> Enum.map(fn {file_name, lines_changed} ->
-      Logger.debug("checking for crossover on: #{file_name}")
-
       case lines_by_file_name[file_name] do
         %Line{file_path: file_path, not_covered: not_covered} ->
           Logger.debug("intersecting missing coverage on: #{file_path}")
