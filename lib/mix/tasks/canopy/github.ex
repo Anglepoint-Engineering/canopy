@@ -40,15 +40,14 @@ defmodule Mix.Tasks.Canopy.Github do
     {owner, repo} = extract_owner_repo!()
 
     with {:ok, files_changed} <- Pr.get_files_changed(token, owner, repo, event_data["number"]),
-         missing_coverage <-
-           code_changes_missing_coverage!(files_changed, Storage.load!("line_coverage")),
+         coverage <- code_change_coverage!(files_changed, Storage.load!("line_coverage")),
          :ok <-
            Pr.annotate_pr(
              token,
              owner,
              repo,
              get_in(event_data, ["pull_request", "head", "sha"]),
-             missing_coverage,
+             coverage,
              mode
            ) do
       :ok
@@ -64,7 +63,7 @@ defmodule Mix.Tasks.Canopy.Github do
     end
   end
 
-  defp code_changes_missing_coverage!(files_changed, line_coverage) do
+  defp code_change_coverage!(files_changed, line_coverage) do
     Logger.debug(
       "cross referencing code changes on: #{length(files_changed)} file(s), " <>
         "with line coverage on: #{map_size(line_coverage)} module(s)"
@@ -78,20 +77,27 @@ defmodule Mix.Tasks.Canopy.Github do
 
     files_changed
     |> Enum.map(fn {file_name, lines_changed} ->
-      case lines_by_file_name[file_name] do
-        %Line{file_path: file_path, not_covered: not_covered} ->
-          Logger.debug("intersecting missing coverage on: #{file_path}")
-
-          case lines_changed |> intersection(not_covered) do
-            [] -> nil
-            uncovered_lines -> {file_path, uncovered_lines}
-          end
-
-        nil ->
-          nil
-      end
+      lines_changed |> line_intersection(lines_by_file_name[file_name])
     end)
     |> Enum.reject(&is_nil/1)
+  end
+
+  defp line_intersection(_lines_changed, nil), do: nil
+
+  defp line_intersection(lines_changed, %Line{
+         file_path: file_path,
+         is_covered: is_covered,
+         not_covered: not_covered
+       }) do
+    Logger.debug("intersecting coverage on: #{file_path}")
+
+    case {lines_changed |> intersection(is_covered), lines_changed |> intersection(not_covered)} do
+      {[], []} ->
+        nil
+
+      {is_covered, not_covered} ->
+        %Line{file_path: file_path, is_covered: is_covered, not_covered: not_covered}
+    end
   end
 
   defp intersection(a, b), do: Enum.filter(a, &Enum.member?(b, &1))

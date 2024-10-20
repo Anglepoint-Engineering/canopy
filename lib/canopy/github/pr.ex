@@ -1,5 +1,7 @@
 defmodule Canopy.Github.Pr do
   alias Canopy.Rest
+  alias Canopy.Coverage.Line
+  alias Canopy.Coverage.Node
 
   def get_files_changed(token, owner, repo, pr_number) do
     url = "https://api.github.com/repos/#{owner}/#{repo}/pulls/#{pr_number}/files"
@@ -55,45 +57,52 @@ defmodule Canopy.Github.Pr do
     end
   end
 
-  def annotate_pr(token, owner, repo, sha, missing_coverage, mode) do
+  def annotate_pr(token, owner, repo, sha, coverage, mode) do
     url = "https://api.github.com/repos/#{owner}/#{repo}/check-runs"
 
     case Rest.post_json(
            url,
            github_headers(token),
-           annotations_request(sha, missing_coverage, mode)
+           annotations_request(sha, coverage, mode)
          ) do
       {:ok, _response} -> :ok
       {:error, reason} -> {:error, reason}
     end
   end
 
-  defp annotations_request(sha, missing_coverage, mode) do
+  defp annotations_request(sha, coverage, mode) do
+    annotations = coverage |> Enum.flat_map(&annotation_request/1)
+
     %{
       "name" => "Canopy Coverage",
       "head_sha" => sha,
       "status" => "completed",
       "conclusion" =>
-        case mode do
-          :info -> "success"
-          :warn -> "action_required"
-          :fail -> "failure"
+        if Enum.empty?(annotations) do
+          "success"
+        else
+          case mode do
+            :info -> "success"
+            :warn -> "action_required"
+            :fail -> "failure"
+          end
         end,
       "output" => %{
         "title" => "Coverage Results",
         "summary" =>
-          if Enum.empty?(missing_coverage) do
+          if Enum.empty?(annotations) do
             "Code changes have complete coverage."
           else
             "Coce changes are missing some coverage."
           end,
-        "annotations" => missing_coverage |> Enum.flat_map(&annotation_request/1)
+        "details" => umbrella_overview(coverage),
+        "annotations" => annotations
       }
     }
   end
 
-  defp annotation_request({file_path, uncovered_lines}) do
-    uncovered_lines
+  defp annotation_request(%Line{file_path: file_path, not_covered: not_covered}) do
+    not_covered
     |> Enum.map(
       &%{
         "path" => file_path,
@@ -103,5 +112,22 @@ defmodule Canopy.Github.Pr do
         "message" => "Line not covered by tests."
       }
     )
+  end
+
+  defp umbrella_overview(coverage) do
+    %Node{children: apps} =
+      coverage
+      |> Enum.reduce(%Node{}, fn {file_path, line}, node ->
+        node |> Node.tree_coverage_by_file_path(file_path, line)
+      end)
+
+    details =
+      apps
+      |> Enum.map(fn {app, %Node{cov: cov, not_cov: not_cov}} ->
+        "#{app} - lines covered: #{cov}, not covered: #{not_cov}"
+      end)
+      |> Enum.join("\n")
+
+    "Umbrella Coverage:\n#{details}"
   end
 end
