@@ -3,13 +3,6 @@ defmodule Canopy.Coverage.Node do
 
   alias Canopy.Coverage.Line
 
-  def node_tree_from_lines(lines) do
-    lines
-    |> Enum.reduce(%__MODULE__{}, fn {module, line}, node ->
-      node |> tree_coverage_by_module(module, line)
-    end)
-  end
-
   def tree_coverage_by_module(node, module, %Line{
         is_covered: is_covered,
         not_covered: not_covered
@@ -28,7 +21,10 @@ defmodule Canopy.Coverage.Node do
         not_covered: not_covered
       }) do
     # skip the apps dir
-    [_apps | paths] = file_path |> String.split("/")
+    [_apps | paths] =
+      file_path
+      |> String.split("/")
+      |> Enum.reject(&(&1 == "lib"))
 
     node |> tree_coverage(paths, {length(is_covered), length(not_covered)})
   end

@@ -6,7 +6,6 @@ defmodule Mix.Tasks.Canopy.Cover do
   require Logger
   alias Canopy.Storage
   alias Canopy.Coverage.Line
-  alias Canopy.Coverage.Node
 
   def run(_) do
     :cover.start()
@@ -24,8 +23,6 @@ defmodule Mix.Tasks.Canopy.Cover do
     |> Line.lines_from_coverage()
     |> tap(&Logger.debug("parsed coverage for: #{map_size(&1)} module(s)"))
     |> Storage.persist!("line_coverage")
-    |> Node.node_tree_from_lines()
-    |> Storage.persist!("node_coverage")
 
     :cover.stop()
   end

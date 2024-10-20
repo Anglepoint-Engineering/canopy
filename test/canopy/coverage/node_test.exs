@@ -22,7 +22,9 @@ defmodule Canopy.Coverage.NodeTest do
                }
              }
            } =
-             %{Canopy.Storage => %Line{is_covered: [1, 3, 5], not_covered: [2, 4, 6]}}
-             |> Node.node_tree_from_lines()
+             Node.tree_coverage_by_module(%Node{}, Canopy.Storage, %Line{
+               is_covered: [1, 3, 5],
+               not_covered: [2, 4, 6]
+             })
   end
 end

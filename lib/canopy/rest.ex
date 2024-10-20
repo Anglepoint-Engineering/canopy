@@ -40,7 +40,7 @@ defmodule Canopy.Rest do
         {:ok, nil}
 
       {:ok, {{_, status_code, _}, _, body}} ->
-        message = "GitHub API returned status #{status_code}: #{body}."
+        message = "received status #{status_code}: #{body}."
         Logger.warning(message)
         {:error, message}
 
