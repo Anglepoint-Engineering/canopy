@@ -27,6 +27,7 @@ defmodule Canopy.Coverage.Line do
   defp covered?(coverage), do: raise("unhandled coverage result: #{coverage}")
 
   defp add_file_path({module, %__MODULE__{} = line}) do
-    {module, %__MODULE__{line | file_path: module.module_info(:compile)[:source]}}
+    file_path = module.module_info(:compile)[:source] |> Path.relative_to(File.cwd!())
+    {module, %__MODULE__{line | file_path: file_path}}
   end
 end
