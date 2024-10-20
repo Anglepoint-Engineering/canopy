@@ -93,9 +93,9 @@ defmodule Canopy.Github.Pr do
           if Enum.empty?(annotations) do
             "Code changes have complete coverage."
           else
-            "Coce changes are missing some coverage."
+            "Code changes are missing coverage."
           end,
-        "details" => umbrella_overview(coverage),
+        "text" => umbrella_overview(coverage),
         "annotations" => annotations
       }
     }
