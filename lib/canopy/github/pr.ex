@@ -116,10 +116,7 @@ defmodule Canopy.Github.Pr do
 
   defp umbrella_overview(coverage) do
     %Node{children: apps} =
-      coverage
-      |> Enum.reduce(%Node{}, fn {file_path, line}, node ->
-        node |> Node.tree_coverage_by_file_path(file_path, line)
-      end)
+      coverage |> Enum.reduce(%Node{}, &Node.tree_coverage_by_file_path(&2, &1))
 
     details =
       apps

@@ -22,7 +22,8 @@ defmodule Canopy.Coverage.Node do
     node |> tree_coverage([app] ++ paths, {length(is_covered), length(not_covered)})
   end
 
-  def tree_coverage_by_file_path(node, file_path, %Line{
+  def tree_coverage_by_file_path(node, %Line{
+        file_path: file_path,
         is_covered: is_covered,
         not_covered: not_covered
       }) do
