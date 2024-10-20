@@ -7,7 +7,11 @@ defmodule Mix.Tasks.Canopy.Inspect do
   alias Canopy.Coverage.Node
 
   def run(_) do
-    Storage.load!("node_coverage") |> render_layer()
+    Storage.load!("line_coverage")
+    |> Enum.reduce(%Node{}, fn {module, line}, node ->
+      node |> Node.tree_coverage_by_module(module, line)
+    end)
+    |> render_layer()
   end
 
   defp render_layer(%Node{children: children}) do
@@ -39,11 +43,17 @@ defmodule Mix.Tasks.Canopy.Inspect do
   defp color_escape_coverage!(percent) do
     color =
       cond do
-        percent < 33.33 ->
+        percent < 20 ->
           IO.ANSI.red()
 
-        percent < 66.67 ->
+        percent < 40 ->
+          IO.ANSI.light_red()
+
+        percent < 60 ->
           IO.ANSI.yellow()
+
+        percent < 80 ->
+          IO.ANSI.light_green()
 
         percent <= 100 ->
           IO.ANSI.green()
