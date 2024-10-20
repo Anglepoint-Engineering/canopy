@@ -41,12 +41,6 @@ defmodule Mix.Tasks.Canopy.Github do
     end
   end
 
-  defp cross_reference_uncovered_files!(nil, _line_coverage),
-    do: raise(ArgumentError, message: "missing files changed")
-
-  defp cross_reference_uncovered_files!(_files_changed, nil),
-    do: raise(ArgumentError, message: "missing line coverage")
-
   defp cross_reference_uncovered_files!(files_changed, line_coverage) do
     lines_by_file_name =
       line_coverage
@@ -56,10 +50,13 @@ defmodule Mix.Tasks.Canopy.Github do
 
     files_changed
     |> Enum.flat_map(fn {file_name, lines_changed} ->
-      lines_by_file_name[file_name]
-      |> Enum.map(fn %Line{file_path: file_path, is_covered: is_covered} ->
-        {file_path, lines_changed -- is_covered}
+      lines_by_file_name
+      |> Map.get(file_name, [])
+      |> Enum.map(fn %Line{file_path: file_path, not_covered: not_covered} ->
+        {file_path, lines_changed |> intersection(not_covered)}
       end)
     end)
   end
+
+  defp intersection(a, b), do: Enum.filter(a, &Enum.member?(b, &1))
 end
