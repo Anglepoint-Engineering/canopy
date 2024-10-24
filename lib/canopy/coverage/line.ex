@@ -1,8 +1,9 @@
 defmodule Canopy.Coverage.Line do
   defstruct file_path: nil, is_covered: [], not_covered: []
 
-  def lines_from_coverage(coverage_data) do
+  def lines_from_coverage(coverage_data, ignore_modules) do
     coverage_data
+    |> Enum.reject(fn {{module, _line}, _count} -> MapSet.member?(ignore_modules, module) end)
     |> Enum.reduce(%{}, &bucket_line_coverage/2)
     |> Enum.map(&add_file_path/1)
     |> Enum.into(%{})

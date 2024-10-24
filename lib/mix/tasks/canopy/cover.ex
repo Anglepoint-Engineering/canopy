@@ -20,7 +20,7 @@ defmodule Mix.Tasks.Canopy.Cover do
     Logger.debug("captured coverage for: #{length(coverage_data)} LOC")
 
     coverage_data
-    |> Line.lines_from_coverage()
+    |> Line.lines_from_coverage(Application.get_env(:canopy, :ignore_modules, []) |> MapSet.new())
     |> tap(&Logger.debug("parsed coverage for: #{map_size(&1)} module(s)"))
     |> Storage.persist!("line_coverage")
 
