@@ -15,10 +15,17 @@ defmodule Canopy.Coverage.Line do
                                                 not_covered: not_covered
                                               } =
                                                 existing ->
-      if covered?(coverage) do
-        %__MODULE__{existing | is_covered: is_covered ++ [line]}
-      else
-        %__MODULE__{existing | not_covered: not_covered ++ [line]}
+      case line do
+        # this is triggered by macro code
+        1 ->
+          existing
+
+        line ->
+          if covered?(coverage) do
+            %__MODULE__{existing | is_covered: is_covered ++ [line]}
+          else
+            %__MODULE__{existing | not_covered: not_covered ++ [line]}
+          end
       end
     end)
   end
