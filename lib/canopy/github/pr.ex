@@ -71,7 +71,10 @@ defmodule Canopy.Github.Pr do
   end
 
   defp annotations_request(sha, coverage, mode) do
-    annotations = coverage |> Enum.flat_map(&annotation_request/1)
+    annotations =
+      coverage
+      |> Enum.flat_map(&annotation_request/1)
+      |> Enum.take(50) # GitHub limit
 
     %{
       "name" => "Canopy Coverage",
