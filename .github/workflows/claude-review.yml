@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   review:
-    uses: Anglepoint-AI-Enablement/angleploint-review-bot/.github/workflows/review.yml@main
+    uses: Anglepoint-AI-Enablement/anglepoint-review-bot/.github/workflows/review.yml@main
     with:
       additional_prompt: |
         This is an Elixir umbrella project for test coverage tooling. The eng-index does not have Elixir-specific standards yet, so apply general code standards focusing on maintainability, readability, correctness, and security.
