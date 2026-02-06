@@ -1,0 +1,25 @@
+name: Claude Code Review
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    uses: Anglepoint-AI-Enablement/angleploint-review-bot/.github/workflows/review.yml@main
+    with:
+      additional_prompt: |
+        This is an Elixir umbrella project for test coverage tooling. The eng-index does not have Elixir-specific standards yet, so apply general code standards focusing on maintainability, readability, correctness, and security.
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ENG_INDEX_APP_ID: ${{ secrets.ENG_INDEX_APP_ID }}
+      ENG_INDEX_PRIVATE_KEY: ${{ secrets.ENG_INDEX_PRIVATE_KEY }}
